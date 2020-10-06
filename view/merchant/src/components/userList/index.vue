@@ -1,0 +1,148 @@
+<template>
+  <div class="divBox">
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <el-form inline>
+          <el-form-item>
+            <el-input v-model="tableFrom.keyword" placeholder="请输入用户名称" class="selWidth">
+              <el-button slot="append" icon="el-icon-search" @click="getList" />
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <el-table
+        v-loading="loading"
+        :data="tableData.data"
+        style="width: 100%"
+        size="small"
+      >
+        <el-table-column label="" min-width="65">
+          <template scope="scope">
+            <el-radio v-model="templateRadio" :label="scope.row.uid" @change.native="getTemplateRow(scope.$index,scope.row)">&nbsp</el-radio>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="uid"
+          label="ID"
+          min-width="60"
+        />
+        <el-table-column
+          prop="nickname"
+          label="微信用户名称"
+          min-width="130"
+        />
+        <el-table-column label="客服头像" min-width="80">
+          <template slot-scope="scope">
+            <div class="demo-image__preview">
+              <el-image
+                class="tabImage"
+                :src="scope.row.avatar"
+                :preview-src-list="[scope.row.avatar]"
+              />
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="用户类型"
+          min-width="130"
+        >
+          <template slot-scope="scope">
+            <span>{{ scope.row.user_type | statusFilter }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="性别"
+          min-width="80"
+        >
+          <template slot-scope="scope">
+            <span>{{ scope.row.sex | saxFilter }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="block">
+        <el-pagination
+          :page-sizes="[20, 40, 60, 80]"
+          :page-size="tableFrom.limit"
+          :current-page="tableFrom.page"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="tableData.total"
+          @size-change="handleSizeChange"
+          @current-change="pageChange"
+        />
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script>
+import { userListApi } from '@/api/system'
+export default {
+  name: 'UserList',
+  filters: {
+    saxFilter(status) {
+      const statusMap = {
+        0: '未知',
+        1: '男',
+        2: '女'
+      }
+      return statusMap[status]
+    },
+    statusFilter(status) {
+      const statusMap = {
+        'wechat': '微信用户',
+        'routine': '小程序用户'
+      }
+      return statusMap[status]
+    }
+  },
+  data() {
+    return {
+      templateRadio: 0,
+      loading: false,
+      tableData: {
+        data: [],
+        total: 0
+      },
+      tableFrom: {
+        page: 1,
+        limit: 20,
+        keyword: ''
+      }
+    }
+  },
+  mounted() {
+    if (this.tableFrom.keyword) this.getList()
+  },
+  methods: {
+    getTemplateRow(idx, row) {
+      /* eslint-disable */
+      form_create_helper.set(this.$route.query.field, {src:row.avatar,id:row.uid})
+      form_create_helper.close(this.$route.query.field);
+    },
+    // 列表
+    getList() {
+      this.loading = true
+      userListApi(this.tableFrom).then(res => {
+        this.tableData.data = res.data.list
+        this.tableData.total = res.data.count
+        this.loading = false
+      }).catch(res => {
+        this.$message.error(res.message)
+        this.loading = false
+      })
+    },
+    pageChange(page) {
+      this.tableFrom.page = page
+      this.getList()
+    },
+    handleSizeChange(val) {
+      this.tableFrom.limit = val
+      this.getList()
+    }
+  }
+}
+</script>
+
+<style scoped>
+
+</style>
